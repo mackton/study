@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+  <style>
+   * {margin:0;padding:0;}
+    body {background-color: #f2f2f2;}
+    canvas {
+      display: block;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+	<canvas id="gbcanvas">sdsds</canvas>
+
+
+
+	<script>
+window.onload = function(){
+  var canvas = document.getElementById('gbcanvas'),
+      context = canvas.getContext('2d');
+      winWidth = document.documentElement.clientWidth,
+      winHeight = document.documentElement.clientHeight;
+
+      canvas.width = winWidth;
+      canvas.height = winHeight;
+    
+    var posX = winWidth/2, //定义粒子圆心X坐标
+      posY =winHeight/2, //定义粒子圆心Y坐标
+      particleRadius = 50, //定义粒子半径
+      speedX=2,//X轴方向速度
+      speedY=-2;//y轴方向速度
+      
+      context.fillStyle = '#E4E4E4';
+      // context.fillRect(0,0,canvas.width,canvas.height); //生成画布背景色
+
+      var color = gcolor()
+        
+        function gcolor(){
+          var r=Math.ceil(Math.random()*255),
+              g=Math.ceil(Math.random()*255),
+              b=Math.ceil(Math.random()*255);
+          var ar='rgb('+r+','+g+','+b+')';
+          return ar;
+        }
+
+
+      setInterval(function(){
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        //为了能够生成粒子移动效果，每次都要清空画布
+      	context.clearRect(0,0,canvas.width,canvas.height);
+        posX+=speedX;
+        posY+=speedY;
+       if (posY>=canvas.height-particleRadius) {
+      		speedY=-speedY;
+          color = gcolor()
+       }
+       if (posX>=canvas.width-particleRadius) {
+       		speedX=-speedX;
+          color = gcolor()
+       }
+       if (posY<=particleRadius) {speedY=-speedY;color = gcolor()}
+
+       if (posX<=particleRadius) {speedX=-speedX;color = gcolor()}
+  
+      
+
+        context.fillStyle = color;
+        context.beginPath();
+        context.arc(posX, posY, particleRadius, 0, Math.PI*2, true);
+        context.closePath();
+        context.fill();
+      }, 10);
+
+}
+
+
+
+
+
+
+	</script>
+
+<script type="text/javascript">
+	var canvas = document.getElementById("canvas"),
+		ctx = canvas.getContext('2d'),
+		winWidth = document.documentElement.clientWidth,
+		winHeight = document.documentElement.clientHeight;
+
+	canvas.width = winWidth;
+	canvas.height = winHeight;
+	var dotList = [];
+	var img = new Image();
+	img.src = "LOGO1.png";
+
+	if(img.complete){
+		init()
+	} else {
+		img.onload = function(){
+			init()
+		}
+	}
+
+	
+	function init() {
+		var imgW = img.width,
+			imgH = img.height,
+			sx = winWidth/2-imgW/2,
+			sy = winHeight/2-imgH/2;
+		ctx.drawImage(img, sx, sy);
+		var imgData = ctx.getImageData(sx, sy, imgW, imgH);
+		console.log(imgData)
+		console.log(imgData.data[50]);
+		for(var x=0; x<imgData.width; x+=5) {
+			for(var y=0; y<imgData.height; y+=5) {
+				var i = (y*imgData.width + x) * 4;
+					var dot = new Dot(sx+x, sy+y,imgData.data[i],imgData.data[i+1],imgData.data[i+2],imgData.data[i+3], 1);
+					dotList.push(dot);
+			}
+		}
+		draw2();
+	}
+
+function easeInOutCubic(t, b, c, d) {
+        if ((t/=d/2) < 1) return c/2*t*t*t + b;
+        return c/2*((t-=2)*t*t + 2) + b;
+    }
+
+
+
+
+	function Dot(centerX,centerY,r,g,b,a, radius) {
+		this.color = 'rgba('+r+','+g+','+b+','+a+')'
+		this.x = centerX;
+		this.y = centerY;
+		this.radius = radius;
+		this.frameNum = 0;//粒子当前帧数
+        this.frameCount =  Math.floor(3000 / 16.66);//一共多少帧
+         this.delay = this.frameCount*Math.random();//延时多少帧
+        this.delayCount = 0;//当前粒子已经等待了多少帧
+        this.sx =winWidth/2;//x起点
+        this.sy =winHeight/2;//y起点
+	}
+
+
+var rafId = null,
+    finishCount = 0;
+function draw2(){
+	var imgW = img.width,
+            imgH = img.height,
+            sx = winWidth/2-imgW/2,
+            sy = winHeight/2-imgH/2;
+
+        ctx.clearRect(0, 0, winWidth, winHeight);//清空画布
+        // ctx.fillStyle = "#000";
+
+        var len = dotList.length,
+            curDot = null,
+            frameNum = 0,
+            frameCount = 0,
+            curX, curY;
+        finishCount = 0;
+        for(var i=0; i < len; i+=1) {
+            // 当前粒子
+            curDot = dotList[i];
+
+            if(curDot.delayCount < curDot.delay){
+                curDot.delayCount += 1;
+                continue;
+            }
+
+
+
+            // 获取当前的time和持续时间和延时
+            frameNum = curDot.frameNum;
+            frameCount = curDot.frameCount;
+            ctx.fillStyle =curDot.color;
+            ctx.save();
+            ctx.beginPath();
+
+            if(frameNum < frameCount) {
+                curX = easeInOutCubic(frameNum, curDot.sx, curDot.x-curDot.sx, curDot.frameCount);
+                curY = easeInOutCubic(frameNum, curDot.sy, curDot.y-curDot.sy, curDot.frameCount);
+                ctx.arc(curX, curY, curDot.radius, 0, 2*Math.PI);
+                curDot.frameNum += 1;
+            } else {
+                ctx.arc(curDot.x, curDot.y, curDot.radius, 0, 2*Math.PI);
+                finishCount += 1;
+            }
+            ctx.fill();
+            ctx.restore();
+
+            if (finishCount >= len) {
+                cancelAnimationFrame(rafId);
+                return;
+            }
+        }
+
+        rafId = requestAnimationFrame(draw2);
+}
+		
+	</script>
+</body>
+</html>
